@@ -13,7 +13,7 @@ impl ProgramContract {
 
     //only owner is allowed to call certain functions
     pub fn owner_key() -> Pubkey {
-        Pubkey::from_str("5fZnvFEfiZ1whPZEh2v56jvKaeggYWxLSSxNVm2jonxH").unwrap()
+        Pubkey::from_str("4BXdw9SoHpzaZCMR5tvEhjm7qQiCsjUAfmjJTHmTmEVC").unwrap()
     } 
 }
 

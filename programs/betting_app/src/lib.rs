@@ -53,7 +53,7 @@ pub mod betting_app {
         let contract = &mut ctx.accounts.contract;
         let contract_info = contract.to_account_info();
         let sys_program = &mut ctx.accounts.system_program;
-        let user = &mut ctx.accounts.payer;
+        let user = &mut ctx.accounts.user;
 
         let game = if let Some(game) = contract.active_games.iter_mut().find(|g| g.id == game_id) {game} else {
             return Err(ProgramErrorCode::InvalidGameId.into());
@@ -107,7 +107,7 @@ pub mod betting_app {
         let contract = &mut ctx.accounts.contract;
         let contract_info = contract.to_account_info();
         let sys_program = &mut ctx.accounts.system_program;
-        let user = &mut ctx.accounts.payer;
+        let user = &mut ctx.accounts.user;
 
         let game = if let Some(game) = contract.active_games.iter_mut().find(|g| g.id == game_id) {game} else {
             return Err(ProgramErrorCode::InvalidGameId.into());
@@ -142,7 +142,7 @@ pub mod betting_app {
         let contract = &mut ctx.accounts.contract;
         let contract_info = contract.to_account_info();
         let sys_program = &mut ctx.accounts.system_program;
-        let owner = &mut ctx.accounts.payer;
+        let owner = &mut ctx.accounts.owner;
 
         if contract.taxes_accumulated == 0 {
             return Err(ProgramErrorCode::NoAmountOwed.into());
@@ -217,7 +217,7 @@ pub mod betting_app {
         let contract = &mut ctx.accounts.contract;
         let contract_info = contract.to_account_info();
         let sys_program = &mut ctx.accounts.system_program;
-        let user = &mut ctx.accounts.payer;
+        let user = &mut ctx.accounts.user;
 
         let game = if let Some(game) = contract.active_games.iter_mut().find(|g| g.id == game_id) {game} else {
             return Err(ProgramErrorCode::InvalidGameId.into());

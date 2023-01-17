@@ -15,9 +15,9 @@ pub struct CreateUserStats<'info> {
 #[derive(Accounts)]
 pub struct PlaceWager<'info> {
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub user: Signer<'info>,
 
-    #[account(mut, seeds = [b"user-stats", payer.key().as_ref()], bump = user_stats.bump)]
+    #[account(mut, seeds = [b"user-stats", user.key().as_ref()], bump = user_stats.bump)]
     pub user_stats: Account<'info, UserStats>,
 
     #[account(mut)]
@@ -29,9 +29,9 @@ pub struct PlaceWager<'info> {
 #[derive(Accounts)]
 pub struct WithdrawWager<'info> {
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub user: Signer<'info>,
 
-    #[account(mut, seeds = [b"user-stats", payer.key().as_ref()], bump = user_stats.bump)]
+    #[account(mut, seeds = [b"user-stats", user.key().as_ref()], bump = user_stats.bump)]
     pub user_stats: Account<'info, UserStats>,
 
     #[account(mut)]
@@ -43,9 +43,9 @@ pub struct WithdrawWager<'info> {
 #[derive(Accounts)]
 pub struct CollectWager<'info> {
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub user: Signer<'info>,
 
-    #[account(mut, seeds = [b"user-stats", payer.key().as_ref()], bump = user_stats.bump)]
+    #[account(mut, seeds = [b"user-stats", user.key().as_ref()], bump = user_stats.bump)]
     pub user_stats: Account<'info, UserStats>,
 
     #[account(mut)]
@@ -56,10 +56,11 @@ pub struct CollectWager<'info> {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(mut, address = ProgramContract::owner_key() @ ProgramErrorCode::InstructionNotPermitted)]
-    pub payer: Signer<'info>,
+    // #[account(mut, constraint = payer.key() == ProgramContract::owner_key() @ ProgramErrorCode::InstructionNotPermitted)]
+    #[account(mut)]
+    pub owner: Signer<'info>,
 
-    #[account(init, payer = payer, space = ProgramContract::MAX_SIZE + 8)]
+    #[account(init, payer = owner, space = ProgramContract::MAX_SIZE + 8)]
      pub contract: Account<'info, ProgramContract>,
 
      pub system_program: Program<'info, System>,
@@ -68,7 +69,7 @@ pub struct Initialize<'info> {
 #[derive(Accounts)]
 pub struct AddScheduledGame<'info> {
     #[account(mut, address = ProgramContract::owner_key() @ ProgramErrorCode::InstructionNotPermitted)]
-    pub payer: Signer<'info>,
+    pub owner: Signer<'info>,
 
     #[account(mut)]
     pub contract: Account<'info, ProgramContract>,
@@ -79,7 +80,7 @@ pub struct AddScheduledGame<'info> {
 #[derive(Accounts)]
 pub struct CollectTaxes<'info> {
     #[account(mut, address = ProgramContract::owner_key() @ ProgramErrorCode::InstructionNotPermitted)]
-    pub payer: Signer<'info>,
+    pub owner: Signer<'info>,
 
     #[account(mut)]
     pub contract: Account<'info, ProgramContract>,
@@ -90,7 +91,7 @@ pub struct CollectTaxes<'info> {
 #[derive(Accounts)]
 pub struct SetGameState<'info> {
     #[account(mut, address = ProgramContract::owner_key() @ ProgramErrorCode::InstructionNotPermitted)]
-    pub payer: Signer<'info>,
+    pub owner: Signer<'info>,
 
     #[account(mut)]
     pub contract: Account<'info, ProgramContract>,
@@ -101,7 +102,7 @@ pub struct SetGameState<'info> {
 #[derive(Accounts)]
 pub struct DeleteGame<'info> {
     #[account(mut, address = ProgramContract::owner_key() @ ProgramErrorCode::InstructionNotPermitted)]
-    pub payer: Signer<'info>,
+    pub owner: Signer<'info>,
 
     #[account(mut)]
     pub contract: Account<'info, ProgramContract>,
