@@ -29,8 +29,8 @@ impl Wager {
 }
 
 impl WagerSummary {
-    //game_id 4 + bet 8 + won 8 + predicted 1 + actuall 1
-    pub const SIZE : usize = 4 + 8 + 8 + 1 + 1;
+    //game_id 4 + bet 8 + won 8 + predicted 1 + actuall 2
+    pub const SIZE : usize = 4 + 8 + 8 + 1 + 2;
 }
 
 impl Game {

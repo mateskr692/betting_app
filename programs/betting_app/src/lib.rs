@@ -88,8 +88,17 @@ pub mod betting_app {
         });
         contract.taxes_accumulated += owner_cut;
 
-        //let user_stats =  &mut ctx.accounts.user_stats;
-
+        let user_history =  &mut ctx.accounts.user_stats.history;
+        if user_history.len() >= UserStats::MAX_HISTORY {
+            user_history.remove(0);
+        }
+        user_history.push(WagerSummary {
+            game_id,
+            lamports_bet: wager_amount,
+            lamports_won: 0,
+            predicted_result: prediction,
+            actuall_result: None,
+        });
 
         Ok(())
     }
@@ -121,6 +130,11 @@ pub mod betting_app {
         system_program::transfer(transfer_cpi, amount)?;
         game.wagers.remove(index);
 
+        let user_history =  &mut ctx.accounts.user_stats.history;
+        if let Some(index) = user_history.iter().position(|&w| w.game_id == game_id ) {
+            user_history.remove(index);
+        }
+        
         Ok(())
     }
 
@@ -214,8 +228,13 @@ pub mod betting_app {
         let wager_idx = if let Some(wager_idx) = game.wagers.iter().position(|&w| w.user == user.key() ) {wager_idx} else {
             return Err(ProgramErrorCode::WagerNotPlaced.into());
         };
+
         let user_wager = &mut game.wagers[wager_idx];
+        let user_history =  &mut ctx.accounts.user_stats.history;
         if game.result.is_some() && user_wager.prediction != game.result.unwrap() {
+            if let Some(summary) = user_history.iter_mut().find(|s| s.game_id == game_id) {
+                summary.actuall_result = game.result;
+            }
             return Err(ProgramErrorCode::NoAmountOwed.into());
         }
         if user_wager.collected_reward {
@@ -246,6 +265,11 @@ pub mod betting_app {
         );
         system_program::transfer(transfer_cpi, won_amount)?;
         game.wagers[wager_idx].collected_reward = true;
+
+        if let Some(summary) = user_history.iter_mut().find(|s| s.game_id == game_id) {
+            summary.actuall_result = game.result;
+            summary.lamports_won = won_amount;
+        }
 
         Ok(())
     }

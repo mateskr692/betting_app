@@ -12,7 +12,7 @@ pub struct WagerSummary {
     pub lamports_bet : u64,
     pub lamports_won : u64,
     pub predicted_result : GameResult,
-    pub actuall_result : GameResult,
+    pub actuall_result : Option<GameResult>,
 }
 
 #[account]
