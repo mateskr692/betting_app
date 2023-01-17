@@ -1,55 +1,20 @@
-use anchor_lang::*;
+use std::str::FromStr;
 use anchor_lang::prelude::*;
 use crate::data::*;
 
 impl ProgramContract {
-    pub const MAX_ACTIVE_GAMES : usize = 100;
+    pub const MAX_ACTIVE_GAMES : usize = 20;
     pub const MAX_WAGERS_PER_GAME : usize = 100;
-    //active games (4 + size * amount)
-    pub const MAX_SIZE : usize = (4 + ProgramContract::MAX_ACTIVE_GAMES * Game::MAX_SIZE);
+    pub const MIN_WAGER_AMOUNT : usize = 1000;
+    //taxes 8 + active games (4 + size * amount)
+    pub const MAX_SIZE : usize = 8 + (4 + ProgramContract::MAX_ACTIVE_GAMES * Game::MAX_SIZE);
+    //percent of each wager that goes to the Onwers account
+    pub const OWNER_CUT : u64 = 5;
+
     //only owner is allowed to call certain functions
-    pub const OWNER_KEY : Pubkey = Pubkey::new_from_array(
-        [0; 32]);
-
-    pub fn add_scheduled_game(&mut self, game_id : u32) -> Result<()> {
-        if self.active_games.len() >= ProgramContract::MAX_ACTIVE_GAMES {
-            return Err(ProgramErrorCode::MaxActiveGamesReached.into());
-        }
-        if let Some(_) = self.active_games.iter().find(|&g| g.id == game_id) {
-            return Err(ProgramErrorCode::GameAlreadyExists.into());
-        }
-
-        self.active_games.push(Game {
-            id: game_id,
-            state: GameState::Scheduled,
-            result: None,
-            wagers: Vec::new()
-        });
-        
-        Ok(())
-    }
-
-    pub fn place_wager(&mut self, user: Pubkey, game_id: u32, amount: u64, prediction: GameResult) -> Result<()> {
-        let game = if let Some(game) = self.active_games.iter_mut().find(|g| g.id == game_id) {game} else {
-            return Err(ProgramErrorCode::InvalidGameId.into());
-        };
-        if game.state != GameState::Scheduled {
-            return Err(ProgramErrorCode::GameAlreadyStarted.into());
-        }
-        if game.wagers.len() >= ProgramContract::MAX_WAGERS_PER_GAME {
-            return Err(ProgramErrorCode::MaxWagersPerGameReached.into());
-        }
-
-        //TODO: make the actuall transfer
-
-        game.wagers.push(Wager {
-            user,
-            prediction,
-            lamports: amount,
-        });
-
-        Ok(())
-    }
+    pub fn owner_key() -> Pubkey {
+        Pubkey::from_str("5fZnvFEfiZ1whPZEh2v56jvKaeggYWxLSSxNVm2jonxH").unwrap()
+    } 
 }
 
 impl UserStats {
@@ -59,8 +24,8 @@ impl UserStats {
 }
 
 impl Wager {
-    //id 32 + lamports 8 + prediction 1
-    pub const SIZE : usize = 32 + 8 + 1;
+    //id 32 + lamports 8 + prediction 1 + collected 1
+    pub const SIZE : usize = 32 + 8 + 1 + 1;
 }
 
 impl WagerSummary {

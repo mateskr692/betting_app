@@ -18,6 +18,7 @@ pub struct WagerSummary {
 #[account]
 pub struct ProgramContract {
     pub active_games : Vec<Game>,
+    pub taxes_accumulated : u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -32,18 +33,15 @@ pub struct Game {
 pub struct Wager {
     pub user : Pubkey,
     pub lamports : u64,
-    pub prediction : GameResult
+    pub prediction : GameResult,
+    pub collected_reward : bool,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq)]
 pub enum GameState {
     Scheduled,
     Live,
-    InPlay,
-    Paused,
     Finished,
-    Postponed,
-    Suspended,
     Cancelled,
 }
 
@@ -65,6 +63,9 @@ pub enum ProgramErrorCode {
     #[msg("Game with given Id already exists in the pool of active games")]
     GameAlreadyExists,
 
+    #[msg("Game with given Id has is neither finished or cancelled")]
+    GameNotFinished,
+
     #[msg("Maximum amount of wagers for this game has been reached, cannot place a bet")]
     MaxWagersPerGameReached,
 
@@ -76,4 +77,13 @@ pub enum ProgramErrorCode {
 
     #[msg("No permission to call this instruction, only the owner is allowed")]
     InstructionNotPermitted,
+
+    #[msg("Cannot place a wager on a game, another one has already been placed")]
+    WagerAlreadyPlaced,
+
+    #[msg("Cannot retract a wager, no wager was placed")]
+    WagerNotPlaced,
+
+    #[msg("No amount owed to perform a transfer")]
+    NoAmountOwed,
 }
