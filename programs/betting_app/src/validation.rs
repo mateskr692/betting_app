@@ -23,6 +23,9 @@ pub struct PlaceWager<'info> {
     #[account(mut)]
     pub contract: Account<'info, ProgramContract>,
 
+    #[account(mut, seeds = [b"program-wallet", contract.key().as_ref()], bump)]
+    pub program_wallet: Account<'info, ProgramWallet>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -36,6 +39,9 @@ pub struct WithdrawWager<'info> {
 
     #[account(mut)]
     pub contract: Account<'info, ProgramContract>,
+
+    #[account(mut, seeds = [b"program-wallet", contract.key().as_ref()], bump)]
+    pub program_wallet: Account<'info, ProgramWallet>,
 
     pub system_program: Program<'info, System>,
 }
@@ -56,12 +62,14 @@ pub struct CollectWager<'info> {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    // #[account(mut, constraint = payer.key() == ProgramContract::owner_key() @ ProgramErrorCode::InstructionNotPermitted)]
-    #[account(mut)]
+    #[account(mut, address = ProgramContract::owner_key() @ ProgramErrorCode::InstructionNotPermitted)]
     pub owner: Signer<'info>,
 
     #[account(init, payer = owner, space = ProgramContract::MAX_SIZE + 8)]
      pub contract: Account<'info, ProgramContract>,
+
+     #[account(init, payer = owner, space = ProgramWallet::MAX_SIZE + 8, seeds = [b"program-wallet", contract.key().as_ref()], bump)]
+     pub program_wallet: Account<'info, ProgramWallet>,
 
      pub system_program: Program<'info, System>,
 }

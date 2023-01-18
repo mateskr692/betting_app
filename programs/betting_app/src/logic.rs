@@ -4,7 +4,7 @@ use crate::data::*;
 
 impl ProgramContract {
     pub const MAX_ACTIVE_GAMES : usize = 10;
-    pub const MAX_WAGERS_PER_GAME : usize = 10;
+    pub const MAX_WAGERS_PER_GAME : usize = 20;
     pub const MIN_WAGER_AMOUNT : usize = 1000;
     //taxes 8 + active games (4 + size * amount)
     pub const MAX_SIZE : usize = 8 + (4 + ProgramContract::MAX_ACTIVE_GAMES * Game::MAX_SIZE);
@@ -36,4 +36,32 @@ impl WagerSummary {
 impl Game {
     //id 4 + state 1 + result 2 + wagers (4 + size * amount)
     pub const MAX_SIZE : usize = 4 + 1 + 2 + (4 + ProgramContract::MAX_WAGERS_PER_GAME * Wager::SIZE);
+}
+
+impl ProgramWallet {
+    //bump 1
+    pub const MAX_SIZE: usize = 1;
+}
+
+impl GameResult {
+    pub fn from_str(input: &str) -> Result<GameResult> {
+        match input {
+            "HomeVictory"  => Ok(GameResult::HomeVictory),
+            "AwayVictory"  => Ok(GameResult::AwayVictory),
+            "Tie"          => Ok(GameResult::Tie),
+            _              => Err(ProgramErrorCode::InvalidEnumType.into()),
+        }
+    }
+}
+
+impl GameState {
+    pub fn from_str(input: &str) -> Result<GameState> {
+        match input {
+            "Scheduled"  => Ok(GameState::Scheduled),
+            "Live"       => Ok(GameState::Live),
+            "Finished"   => Ok(GameState::Finished),
+            "Cancelled"  => Ok(GameState::Cancelled),
+            _            => Err(ProgramErrorCode::InvalidEnumType.into()),
+        }
+    }
 }

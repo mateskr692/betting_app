@@ -21,6 +21,11 @@ pub struct ProgramContract {
     pub taxes_accumulated : u64,
 }
 
+#[account]
+pub struct ProgramWallet {
+    pub bump: u8,
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct Game {
     pub id: u32,
@@ -54,6 +59,9 @@ pub enum GameResult {
 
 #[error_code]
 pub enum ProgramErrorCode {
+    #[msg("Invalid string value for enum was passed")]
+    InvalidEnumType,
+
     #[msg("Game with given Id doesn't exist or is already finished")]
     InvalidGameId,
 

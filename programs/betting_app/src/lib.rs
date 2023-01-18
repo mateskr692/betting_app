@@ -17,6 +17,8 @@ pub mod betting_app {
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         let contract = &mut ctx.accounts.contract;
         contract.active_games = Vec::new();
+        let wallet = &mut ctx.accounts.program_wallet;
+        wallet.bump = *ctx.bumps.get("program_wallet").unwrap();
 
         Ok(())
     }
@@ -50,9 +52,10 @@ pub mod betting_app {
     }
 
     pub fn place_wager(ctx: Context<PlaceWager>, game_id: u32, amount: u64, prediction: GameResult) -> Result<()> {
+        // let prediction = GameResult::from_str(&prediction_str)?;
         let contract = &mut ctx.accounts.contract;
-        let contract_info = contract.to_account_info();
         let sys_program = &mut ctx.accounts.system_program;
+        let wallet = &mut ctx.accounts.program_wallet;
         let user = &mut ctx.accounts.user;
 
         let game = if let Some(game) = contract.active_games.iter_mut().find(|g| g.id == game_id) {game} else {
@@ -72,7 +75,7 @@ pub mod betting_app {
             sys_program.to_account_info(), 
             system_program::Transfer { 
                 from: user.to_account_info(),
-                to: contract_info,
+                to: wallet.to_account_info(),
             }
         );
         system_program::transfer(transfer_cpi, amount)?;
@@ -105,8 +108,8 @@ pub mod betting_app {
 
     pub fn withdraw_wager(ctx: Context<WithdrawWager>, game_id : u32) -> Result<()> {
         let contract = &mut ctx.accounts.contract;
-        let contract_info = contract.to_account_info();
         let sys_program = &mut ctx.accounts.system_program;
+        let wallet = &mut ctx.accounts.program_wallet;
         let user = &mut ctx.accounts.user;
 
         let game = if let Some(game) = contract.active_games.iter_mut().find(|g| g.id == game_id) {game} else {
@@ -123,7 +126,7 @@ pub mod betting_app {
         let transfer_cpi = CpiContext::new(
             sys_program.to_account_info(), 
             system_program::Transfer { 
-                from: contract_info,
+                from: wallet.to_account_info(),
                 to: user.to_account_info(),
             }
         );
