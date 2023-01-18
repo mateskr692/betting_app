@@ -231,6 +231,17 @@ function getUserPDA(program, user) {
   return userStatsPDA;
 }
 
+function getProgramWallet(program, contract) {
+  const [programPDA, _] = PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("program-wallet"),
+      contract.publicKey.toBuffer(),
+    ],
+    program.programId
+  );
+  return programPDA;
+}
+
 
 describe("betting_app", () => {
   // Configure the client to use the local cluster.
@@ -293,7 +304,10 @@ describe("betting_app", () => {
     const gameId = state.activeGames[0].id;
     const prediction = { homeVictory: {} };
     const amount = new anchor.BN(1 * anchor.web3.LAMPORTS_PER_SOL);
+
+    const balance_before = await program.provider.connection.getBalance(getProgramWallet(program, contract));
     await placeWager(program, contract, user, gameId, amount, prediction);
+    const balance_after = await program.provider.connection.getBalance(getProgramWallet(program, contract));
 
     state = await program.account.programContract.fetch(contract.publicKey);
     const gameState = state.activeGames[0];
@@ -302,6 +316,7 @@ describe("betting_app", () => {
     expect(gameState.wagers[0].prediction).to.deep.equal(prediction);
     expect(gameState.wagers[0].lamports.lt(amount));
     expect(state.taxesAccumulated.gt(new anchor.BN(0)));
+    expect(balance_after).to.be.greaterThan(balance_before);
 
     const stats =  await program.account.userStats.fetch(getUserPDA(program, user));
     expect(stats.history).to.have.lengthOf(1);
@@ -310,6 +325,7 @@ describe("betting_app", () => {
     expect(stats.history[0].actuallResult).to.equal(null);
     expect(stats.history[0].lamportsBet.lt(amount));
     expect(stats.history[0].lamportsWon.eqn(0));
+    console.log("program balance increased by %d", balance_after - balance_before);
   });
 
   it("User fails to bet on a game twice", async () => {
@@ -340,13 +356,18 @@ describe("betting_app", () => {
   it("User withdraws a bet", async () => {
     let stats =  await program.account.userStats.fetch(getUserPDA(program, user));
     const gameId = stats.history[0].gameId;
+
+    const balance_before = await program.provider.connection.getBalance(getProgramWallet(program, contract));
     await withdrawWager(program, contract, user, gameId);
+    const balance_after = await program.provider.connection.getBalance(getProgramWallet(program, contract));
     const state = await program.account.programContract.fetch(contract.publicKey);
     stats = await program.account.userStats.fetch(getUserPDA(program, user));
     
     expect(state.activeGames[0].wagers).to.be.lengthOf(0);
     expect(state.taxesAccumulated.gtn(0));
     expect(stats.history).to.be.lengthOf(0);
+    expect(balance_after).to.be.lessThan(balance_before);
+    console.log("program balance decreased by %d", balance_before - balance_after);
   });
 
 });

@@ -108,7 +108,7 @@ pub mod betting_app {
 
     pub fn withdraw_wager(ctx: Context<WithdrawWager>, game_id : u32) -> Result<()> {
         let contract = &mut ctx.accounts.contract;
-        let sys_program = &mut ctx.accounts.system_program;
+        let _sys_program = &mut ctx.accounts.system_program;
         let wallet = &mut ctx.accounts.program_wallet;
         let user = &mut ctx.accounts.user;
 
@@ -121,16 +121,11 @@ pub mod betting_app {
         let index = if let Some(index) = game.wagers.iter().position(|&w| w.user == user.key() ) {index} else {
             return Err(ProgramErrorCode::WagerNotPlaced.into());
         };
-
+        
         let amount = game.wagers[index].lamports;
-        let transfer_cpi = CpiContext::new(
-            sys_program.to_account_info(), 
-            system_program::Transfer { 
-                from: wallet.to_account_info(),
-                to: user.to_account_info(),
-            }
-        );
-        system_program::transfer(transfer_cpi, amount)?;
+        **wallet.to_account_info().try_borrow_mut_lamports()? -= amount;
+        **user.to_account_info().try_borrow_mut_lamports()? += amount;
+
         game.wagers.remove(index);
 
         let user_history =  &mut ctx.accounts.user_stats.history;
