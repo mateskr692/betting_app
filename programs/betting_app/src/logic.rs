@@ -3,8 +3,8 @@ use anchor_lang::prelude::*;
 use crate::data::*;
 
 impl ProgramContract {
-    pub const MAX_ACTIVE_GAMES : usize = 20;
-    pub const MAX_WAGERS_PER_GAME : usize = 100;
+    pub const MAX_ACTIVE_GAMES : usize = 10;
+    pub const MAX_WAGERS_PER_GAME : usize = 10;
     pub const MIN_WAGER_AMOUNT : usize = 1000;
     //taxes 8 + active games (4 + size * amount)
     pub const MAX_SIZE : usize = 8 + (4 + ProgramContract::MAX_ACTIVE_GAMES * Game::MAX_SIZE);

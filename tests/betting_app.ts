@@ -13,9 +13,10 @@ async function initialize(
     .initialize()
     .accounts({
       owner: owner.publicKey,
-      contract,
+      contract: contract.publicKey,
     })
-    .signers(owner instanceof (anchor.Wallet as any) ? [] : [owner])
+    // .signers(owner instanceof (anchor.Wallet as any) ? [] : [owner])
+    .signers([contract])
     .rpc();
 }
 
@@ -198,11 +199,14 @@ const airdropToAddress = async (provider, address: PublicKey, amount) => {
 
 describe("betting_app", () => {
   // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.AnchorProvider.env());
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
+
   const program = anchor.workspace.BettingApp as Program<BettingApp>;
-  const contract = anchor.web3.Keypair.generate().publicKey;
   const owner = (program.provider as anchor.AnchorProvider).wallet;
-  console.log(owner.publicKey);
+  const contract = anchor.web3.Keypair.generate();
+  // const owner = anchor.web3.Keypair.generate();
+  //console.log(owner.publicKey);
 
   before(async () => {
     try {
