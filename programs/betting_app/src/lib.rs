@@ -108,7 +108,6 @@ pub mod betting_app {
 
     pub fn withdraw_wager(ctx: Context<WithdrawWager>, game_id : u32) -> Result<()> {
         let contract = &mut ctx.accounts.contract;
-        let _sys_program = &mut ctx.accounts.system_program;
         let wallet = &mut ctx.accounts.program_wallet;
         let user = &mut ctx.accounts.user;
 
@@ -138,22 +137,16 @@ pub mod betting_app {
 
     pub fn collect_taxes(ctx: Context<CollectTaxes>) -> Result<()> {
         let contract = &mut ctx.accounts.contract;
-        let contract_info = contract.to_account_info();
-        let sys_program = &mut ctx.accounts.system_program;
         let owner = &mut ctx.accounts.owner;
+        let wallet = &mut ctx.accounts.program_wallet;
 
         if contract.taxes_accumulated == 0 {
             return Err(ProgramErrorCode::NoAmountOwed.into());
         }
 
-        let transfer_cpi = CpiContext::new(
-            sys_program.to_account_info(), 
-            system_program::Transfer { 
-                from: contract_info,
-                to: owner.to_account_info(),
-            }
-        );
-        system_program::transfer(transfer_cpi, contract.taxes_accumulated)?;
+        let amount =contract.taxes_accumulated;
+        **wallet.to_account_info().try_borrow_mut_lamports()? -= amount;
+        **owner.to_account_info().try_borrow_mut_lamports()? += amount;
         contract.taxes_accumulated = 0;
 
         Ok(())
@@ -214,9 +207,8 @@ pub mod betting_app {
 
     pub fn collect_wager(ctx: Context<CollectWager>, game_id : u32) -> Result<()> {
         let contract = &mut ctx.accounts.contract;
-        let contract_info = contract.to_account_info();
-        let sys_program = &mut ctx.accounts.system_program;
         let user = &mut ctx.accounts.user;
+        let wallet = &mut ctx.accounts.program_wallet;
 
         let game = if let Some(game) = contract.active_games.iter_mut().find(|g| g.id == game_id) {game} else {
             return Err(ProgramErrorCode::InvalidGameId.into());
@@ -255,14 +247,8 @@ pub mod betting_app {
             waged_amount * total_pool / victorious_pool
         };
 
-        let transfer_cpi = CpiContext::new(
-            sys_program.to_account_info(), 
-            system_program::Transfer { 
-                from: contract_info,
-                to: user.to_account_info(),
-            }
-        );
-        system_program::transfer(transfer_cpi, won_amount)?;
+        **wallet.to_account_info().try_borrow_mut_lamports()? -= won_amount;
+        **user.to_account_info().try_borrow_mut_lamports()? += won_amount;
         game.wagers[wager_idx].collected_reward = true;
 
         if let Some(summary) = user_history.iter_mut().find(|s| s.game_id == game_id) {

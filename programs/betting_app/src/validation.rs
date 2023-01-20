@@ -57,6 +57,9 @@ pub struct CollectWager<'info> {
     #[account(mut)]
     pub contract: Account<'info, ProgramContract>,
 
+    #[account(mut, seeds = [b"program-wallet", contract.key().as_ref()], bump)]
+    pub program_wallet: Account<'info, ProgramWallet>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -92,6 +95,9 @@ pub struct CollectTaxes<'info> {
 
     #[account(mut)]
     pub contract: Account<'info, ProgramContract>,
+
+    #[account(mut, seeds = [b"program-wallet", contract.key().as_ref()], bump)]
+    pub program_wallet: Account<'info, ProgramWallet>,
 
     pub system_program: Program<'info, System>,
 }

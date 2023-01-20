@@ -33,11 +33,20 @@ async function collectTaxes(
   contract: any,
   owner: any
 ) {
+  const [programPDA, _pb] = PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("program-wallet"),
+      contract.publicKey.toBuffer(),
+    ],
+    program.programId
+  );
+
   await program.methods
     .collectTaxes()
     .accounts({
       owner: owner.publicKey,
       contract: contract.publicKey,
+      programWallet: programPDA,
     })
     .signers(owner instanceof (anchor.Wallet as any) ? [] : [owner])
     .rpc();
@@ -193,10 +202,17 @@ async function collectWager(
   user: anchor.web3.Signer,
   gameId,
 ) {
-  const [userStatsPDA, _] = PublicKey.findProgramAddressSync(
+  const [userStatsPDA, _ub] = PublicKey.findProgramAddressSync(
     [
       anchor.utils.bytes.utf8.encode("user-stats"),
       user.publicKey.toBuffer(),
+    ],
+    program.programId
+  );
+  const [programPDA, _pb] = PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode("program-wallet"),
+      contract.publicKey.toBuffer(),
     ],
     program.programId
   );
@@ -207,6 +223,7 @@ async function collectWager(
       user: user.publicKey,
       contract: contract.publicKey,
       userStats: userStatsPDA,
+      programWallet: programPDA,
     })
     .signers(user instanceof (anchor.Wallet as any) ? [] : [user])
     .rpc();
@@ -251,11 +268,14 @@ describe("betting_app", () => {
   const owner = (program.provider as anchor.AnchorProvider).wallet;
   const contract = anchor.web3.Keypair.generate();
   const user = anchor.web3.Keypair.generate();
+  const user2 = anchor.web3.Keypair.generate();
 
   before(async () => {
     await initialize(program, contract, owner);
     await airdropToAddress(program.provider, user.publicKey, 10);
+    await airdropToAddress(program.provider, user2.publicKey, 10);
     await createUserStats(program, user);
+    await createUserStats(program, user2);
     expect(true);
   });
 
@@ -406,6 +426,80 @@ describe("betting_app", () => {
       expect(_err.error.errorCode.code).to.equal("GameAlreadyStarted");
     }
 
+  });
+
+  it("Owner sets result of a game", async () => {
+    let state = await program.account.programContract.fetch(contract.publicKey);
+    const gameId = state.activeGames[0].id;
+    const gameState = "Finished"
+    const result = "HomeVictory";
+
+    await setGameState(program, contract, owner, gameId, gameState, result );
+    state = await program.account.programContract.fetch(contract.publicKey);
+    expect(state.activeGames[0].state).to.deep.equal({ finished: {} });
+    expect(state.activeGames[0].result).to.deep.equal( { homeVictory: {} });
+  });
+
+  it("Owner deletes finished game", async () => {
+    let state = await program.account.programContract.fetch(contract.publicKey);
+    let gameId = state.activeGames[0].id;
+    let gameCount = state.activeGames.length;
+
+    await deleteGame(program, contract, owner, gameId);
+    state = await program.account.programContract.fetch(contract.publicKey);
+    expect(state.activeGames.length).to.equal(gameCount - 1);
+  });
+
+  it("Users bet on a game, 1 win, 1 loses", async () => {
+    const gameId = 3974351;
+    const prediction = "HomeVictory";
+    const result = "AwayVictory";
+    const gameState = "Finished";
+    const amount1 = new anchor.BN(0.01 * anchor.web3.LAMPORTS_PER_SOL);
+    const amount2 = new anchor.BN(2 * anchor.web3.LAMPORTS_PER_SOL);
+
+    await addScheduledGame(program, contract, owner, gameId);
+    await placeWager(program, contract, user, gameId, amount1, result);
+    await placeWager(program, contract, user2, gameId, amount2, prediction);
+    await setGameState(program, contract, owner, gameId, gameState, result);
+    console.log("User1 bet %d", amount1.toNumber());
+    console.log("User2 bet %d", amount2.toNumber());
+    try {
+      await collectWager(program, contract, user2, gameId);
+      expect(false, "Shouldnt be able to collect wager on a lost bet");
+    } catch (_err) {
+      expect(_err.error.errorCode.code).to.equal("NoAmountOwed");
+    }
+
+    const balance_before = await program.provider.connection.getBalance(getProgramWallet(program, contract));
+    await collectWager(program, contract, user, gameId);
+    const balance_after = await program.provider.connection.getBalance(getProgramWallet(program, contract));
+    const state = await program.account.programContract.fetch(contract.publicKey);
+    const game = state.activeGames.find(x => x.id == gameId);
+
+    expect(balance_after).to.be.lessThan(balance_before);
+    expect(game.wagers[0].collectedReward).to.be.true;
+    console.log("User1 won %d", balance_before - balance_after);
+
+    try {
+      await collectWager(program, contract, user, gameId);
+      expect(false, "Shouldnt be able to collect reward twice");
+    } catch (_err) {
+      expect(_err.error.errorCode.code).to.equal("NoAmountOwed");
+    }
+
+  });
+
+  it("Owner collects taxes", async () => {
+
+    const balance_before = await program.provider.connection.getBalance(getProgramWallet(program, contract));
+    expect(balance_before).to.not.equal(0);
+    await collectTaxes(program, contract, owner);
+    const balance_after = await program.provider.connection.getBalance(getProgramWallet(program, contract));
+
+    let state = await program.account.programContract.fetch(contract.publicKey);
+    expect(state.taxesAccumulated.eqn(0));
+    console.log("program balance decreased by %d", balance_before - balance_after);
   });
 
 });
