@@ -51,8 +51,8 @@ pub mod betting_app {
         Ok(())
     }
 
-    pub fn place_wager(ctx: Context<PlaceWager>, game_id: u32, amount: u64, prediction: GameResult) -> Result<()> {
-        // let prediction = GameResult::from_str(&prediction_str)?;
+    pub fn place_wager(ctx: Context<PlaceWager>, game_id: u32, amount: u64, prediction_str: String) -> Result<()> {
+        let prediction = GameResult::from_str(&prediction_str)?;
         let contract = &mut ctx.accounts.contract;
         let sys_program = &mut ctx.accounts.system_program;
         let wallet = &mut ctx.accounts.program_wallet;
@@ -159,9 +159,10 @@ pub mod betting_app {
         Ok(())
     }
 
-    pub fn set_game_state(ctx: Context<SetGameState>, game_id : u32, state: GameState, result: Option<GameResult>) -> Result<()> {
+    pub fn set_game_state(ctx: Context<SetGameState>, game_id : u32, state_str: String, result_str: String ) -> Result<()> {
         let contract = &mut ctx.accounts.contract;
-
+        let result = GameResult::from_str_opt(&result_str)?;
+        let state = GameState::from_str(&state_str)?;
         let game = if let Some(game) = contract.active_games.iter_mut().find(|g| g.id == game_id) {game} else {
             return Err(ProgramErrorCode::InvalidGameId.into());
         };

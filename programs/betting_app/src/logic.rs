@@ -52,6 +52,16 @@ impl GameResult {
             _              => Err(ProgramErrorCode::InvalidEnumType.into()),
         }
     }
+
+    pub fn from_str_opt(input: &str) -> Result<Option<GameResult>> {
+        match input {
+            "HomeVictory"  => Ok(Some(GameResult::HomeVictory)),
+            "AwayVictory"  => Ok(Some(GameResult::AwayVictory)),
+            "Tie"          => Ok(Some(GameResult::Tie)),
+            "None"         => Ok(None),
+            _              => Err(ProgramErrorCode::InvalidEnumType.into()),
+        }
+    }
 }
 
 impl GameState {

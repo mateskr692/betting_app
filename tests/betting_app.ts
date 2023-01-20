@@ -64,8 +64,8 @@ async function setGameState(
   contract: any,
   owner: any,
   gameId,
-  state,
-  result,
+  state: string,
+  result: string,
 ) {
   await program.methods
     .setGameState(gameId, state, result)
@@ -302,7 +302,7 @@ describe("betting_app", () => {
   it("User bets on a game", async () => {
     let state = await program.account.programContract.fetch(contract.publicKey);
     const gameId = state.activeGames[0].id;
-    const prediction = { homeVictory: {} };
+    const prediction = "HomeVictory"
     const amount = new anchor.BN(1 * anchor.web3.LAMPORTS_PER_SOL);
 
     const balance_before = await program.provider.connection.getBalance(getProgramWallet(program, contract));
@@ -313,7 +313,7 @@ describe("betting_app", () => {
     const gameState = state.activeGames[0];
     expect(gameState.wagers).to.have.lengthOf(1);
     expect(gameState.wagers[0].user).to.deep.equal(user.publicKey);
-    expect(gameState.wagers[0].prediction).to.deep.equal(prediction);
+    expect(gameState.wagers[0].prediction).to.deep.equal( { homeVictory: {} } );
     expect(gameState.wagers[0].lamports.lt(amount));
     expect(state.taxesAccumulated.gt(new anchor.BN(0)));
     expect(balance_after).to.be.greaterThan(balance_before);
@@ -321,7 +321,7 @@ describe("betting_app", () => {
     const stats =  await program.account.userStats.fetch(getUserPDA(program, user));
     expect(stats.history).to.have.lengthOf(1);
     expect(stats.history[0].gameId).to.equal(gameId);
-    expect(stats.history[0].predictedResult).to.deep.equal(prediction);
+    expect(stats.history[0].predictedResult).to.deep.equal( { homeVictory: {} } );
     expect(stats.history[0].actuallResult).to.equal(null);
     expect(stats.history[0].lamportsBet.lt(amount));
     expect(stats.history[0].lamportsWon.eqn(0));
@@ -331,7 +331,7 @@ describe("betting_app", () => {
   it("User fails to bet on a game twice", async () => {
     const stats =  await program.account.userStats.fetch(getUserPDA(program, user));
     const gameId = stats.history[0].gameId;
-    const prediction = { homeVictory: {} };
+    const prediction = "AwayVictory";
     const amount = new anchor.BN(1 * anchor.web3.LAMPORTS_PER_SOL);
     try {
       await placeWager(program, contract, user, gameId, amount, prediction);
@@ -343,7 +343,7 @@ describe("betting_app", () => {
 
   it("User fails to bet on a non existing game", async () => {
     const gameId = 9182;
-    const prediction = { homeVictory: {} };
+    const prediction = "Tie";
     const amount = new anchor.BN(1 * anchor.web3.LAMPORTS_PER_SOL);
     try {
       await placeWager(program, contract, user, gameId, amount, prediction);
@@ -368,6 +368,44 @@ describe("betting_app", () => {
     expect(stats.history).to.be.lengthOf(0);
     expect(balance_after).to.be.lessThan(balance_before);
     console.log("program balance decreased by %d", balance_before - balance_after);
+  });
+
+  it("User fails to withdraw a non existing bet", async () => {``
+    const state = await program.account.programContract.fetch(contract.publicKey);
+    const gameId = state.activeGames[0].id;
+    try {
+      await withdrawWager(program, contract, user, gameId);
+      expect(false, "Shouldnt be able to bet twice");
+    } catch(_err) {
+      expect(_err.error.errorCode.code).to.equal("WagerNotPlaced");
+    }
+  });
+
+  it("Owner changes status of a game", async () => {
+    let state = await program.account.programContract.fetch(contract.publicKey);
+    const gameId = state.activeGames[0].id;
+    const gameState = "Live"
+    const result = "None";
+
+    await setGameState(program, contract, owner, gameId, gameState, result );
+    state = await program.account.programContract.fetch(contract.publicKey);
+    expect(state.activeGames[0].state).to.deep.equal({ live: {} });
+    expect(state.activeGames[0].result).to.equal(null);
+
+  });
+
+  it("User fails to bet on a Live game", async () => {
+    const state = await program.account.programContract.fetch(contract.publicKey);
+    const gameId = state.activeGames[0].id;
+    const prediction = "AwayVictory";
+    const amount = new anchor.BN(1 * anchor.web3.LAMPORTS_PER_SOL);
+    try {
+      await placeWager(program, contract, user, gameId, amount, prediction);
+      expect(false, "Shouldnt be able to bet twice");
+    } catch(_err) {
+      expect(_err.error.errorCode.code).to.equal("GameAlreadyStarted");
+    }
+
   });
 
 });
