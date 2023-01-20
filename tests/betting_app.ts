@@ -28,6 +28,21 @@ async function initialize(
     .rpc();
 }
 
+async function reserveSpace(
+  program: Program<BettingApp>,
+  contract: any,
+  owner: any,
+) {
+  await program.methods
+    .reserveSpace()
+    .accounts({
+      owner: owner.publicKey,
+      contract: contract.publicKey,
+    })
+    .signers(owner instanceof (anchor.Wallet as any) ? [] : [owner])
+    .rpc();
+}
+
 async function collectTaxes(
   program: Program<BettingApp>,
   contract: any,
@@ -272,6 +287,11 @@ describe("betting_app", () => {
 
   before(async () => {
     await initialize(program, contract, owner);
+    await reserveSpace(program, contract, owner);
+    await reserveSpace(program, contract, owner);
+    await reserveSpace(program, contract, owner);
+    await reserveSpace(program, contract, owner);
+
     await airdropToAddress(program.provider, user.publicKey, 10);
     await airdropToAddress(program.provider, user2.publicKey, 10);
     await createUserStats(program, user);

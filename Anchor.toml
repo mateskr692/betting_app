@@ -2,7 +2,7 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-betting_app = "41jcANndXq56ztpCtvJa9mKkzxaunn9nyYVbCFihcxT7"
+betting_app = "Cs6SipyJ7i4Qgw1QaaR2Jmtrbx9c4A7sHa4Kgx9edLHC"
 
 [registry]
 url = "https://api.apr.dev"

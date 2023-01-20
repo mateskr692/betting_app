@@ -3,14 +3,16 @@ use anchor_lang::prelude::*;
 use crate::data::*;
 
 impl ProgramContract {
-    pub const MAX_ACTIVE_GAMES : usize = 10;
-    pub const MAX_WAGERS_PER_GAME : usize = 20;
+    pub const MAX_WAGERS_PER_GAME : usize = 200;
     pub const MIN_WAGER_AMOUNT : usize = 1000;
-    //taxes 8 + active games (4 + size * amount)
-    pub const MAX_SIZE : usize = 8 + (4 + ProgramContract::MAX_ACTIVE_GAMES * Game::MAX_SIZE);
+    //taxes 8 + max games 8 + active games 4
+    pub const BASE_SIZE: usize = 8 + 8 + 4;
     //percent of each wager that goes to the Onwers account
     pub const OWNER_CUT : u64 = 5;
 
+    pub fn total_size(max_games: u64) -> usize {
+        ProgramContract::BASE_SIZE + (max_games as usize * Game::MAX_SIZE) 
+    }
     //only owner is allowed to call certain functions
     pub fn owner_key() -> Pubkey {
         Pubkey::from_str("4BXdw9SoHpzaZCMR5tvEhjm7qQiCsjUAfmjJTHmTmEVC").unwrap()

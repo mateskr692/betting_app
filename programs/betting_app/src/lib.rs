@@ -6,7 +6,7 @@ use crate::data::*;
 use crate::validation::*;
 use anchor_lang::prelude::*;
 
-declare_id!("41jcANndXq56ztpCtvJa9mKkzxaunn9nyYVbCFihcxT7");
+declare_id!("Cs6SipyJ7i4Qgw1QaaR2Jmtrbx9c4A7sHa4Kgx9edLHC");
 
 #[program]
 pub mod betting_app {
@@ -16,9 +16,17 @@ pub mod betting_app {
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         let contract = &mut ctx.accounts.contract;
+        contract.max_games = 0;
         contract.active_games = Vec::new();
         let wallet = &mut ctx.accounts.program_wallet;
         wallet.bump = *ctx.bumps.get("program_wallet").unwrap();
+
+        Ok(())
+    }
+
+    pub fn reserve_space(ctx: Context<ReserveSpace>) -> Result<()> {
+        let contract = &mut ctx.accounts.contract;
+        contract.max_games += 1;
 
         Ok(())
     }
@@ -34,7 +42,7 @@ pub mod betting_app {
     pub fn add_scheduled_game(ctx: Context<AddScheduledGame>, game_id : u32) -> Result<()> {
         let contract = &mut ctx.accounts.contract;
 
-        if contract.active_games.len() >= ProgramContract::MAX_ACTIVE_GAMES {
+        if contract.active_games.len() >= contract.max_games as usize {
             return Err(ProgramErrorCode::MaxActiveGamesReached.into());
         }
         if let Some(_) = contract.active_games.iter().find(|&g| g.id == game_id) {

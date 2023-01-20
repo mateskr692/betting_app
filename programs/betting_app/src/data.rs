@@ -17,6 +17,7 @@ pub struct WagerSummary {
 
 #[account]
 pub struct ProgramContract {
+    pub max_games: u64,
     pub active_games : Vec<Game>,
     pub taxes_accumulated : u64,
 }
