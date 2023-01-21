@@ -66,6 +66,9 @@ pub enum ProgramErrorCode {
     #[msg("Game with given Id doesn't exist or is already finished")]
     InvalidGameId,
 
+    #[msg("Game with given sate cannot be set to given result")]
+    InvalidGameState,
+
     #[msg("Game with given Id has already started, cannot place a bet")]
     GameAlreadyStarted,
 

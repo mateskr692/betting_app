@@ -137,10 +137,6 @@ async function createUserStats(
     })
     .signers(user instanceof (anchor.Wallet as any) ? [] : [user])
     .rpc();
-
-  // expect(
-  //   (await program.account.userStats.fetch(userStatsPDA)).gamesWon
-  // ).to.equal(0);
 }
 
 async function placeWager(

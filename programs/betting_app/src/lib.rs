@@ -164,6 +164,14 @@ pub mod betting_app {
         let contract = &mut ctx.accounts.contract;
         let result = GameResult::from_str_opt(&result_str)?;
         let state = GameState::from_str(&state_str)?;
+        match state {
+            GameState::Finished => if result.is_none() {
+                return Err(ProgramErrorCode::InvalidGameState.into());
+            }
+            _ => if result.is_some() {
+                return Err(ProgramErrorCode::InvalidGameState.into());
+            }
+        }
         let game = if let Some(game) = contract.active_games.iter_mut().find(|g| g.id == game_id) {game} else {
             return Err(ProgramErrorCode::InvalidGameId.into());
         };
