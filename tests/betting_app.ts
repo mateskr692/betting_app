@@ -299,6 +299,13 @@ describe("betting_app", () => {
     expect(true);
   });
 
+  it("Check if user created his PDA", async () => {
+    const newUser = anchor.web3.Keypair.generate();
+    const info = await program.provider.connection.getAccountInfo(user.publicKey);
+    const newUserInfo = await program.provider.connection.getAccountInfo(newUser.publicKey);
+    expect(info).to.not.be.null;
+    expect(newUserInfo).to.be.null;
+  });
 
   it("Owner adds scheduled games", async () => {
     let gameId = 25412;

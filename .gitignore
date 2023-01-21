@@ -13,3 +13,11 @@ test-ledger
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+app/owner/node_modules
+app/owner/.yarn/*
+!app/owner/.yarn/patches
+!app/owner/.yarn/plugins
+!app/owner/.yarn/releases
+!app/owner/.yarn/sdks
+!app/owner/.yarn/versions
