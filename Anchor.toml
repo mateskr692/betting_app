@@ -8,7 +8,7 @@ betting_app = "Cs6SipyJ7i4Qgw1QaaR2Jmtrbx9c4A7sHa4Kgx9edLHC"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "/home/skrzelik/.config/solana/id.json"
 
 [scripts]

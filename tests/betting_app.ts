@@ -297,10 +297,12 @@ describe("betting_app", () => {
 
   it("Check if user created his PDA", async () => {
     const newUser = anchor.web3.Keypair.generate();
-    const info = await program.provider.connection.getAccountInfo(user.publicKey);
-    const newUserInfo = await program.provider.connection.getAccountInfo(newUser.publicKey);
-    expect(info).to.not.be.null;
-    expect(newUserInfo).to.be.null;
+    const userPDA = getUserPDA(program, user);
+    const newUserPDA = getUserPDA(program, newUser);
+    const userStats = await program.provider.connection.getAccountInfo(userPDA);
+    const newUserStats = await program.provider.connection.getAccountInfo(newUserPDA);
+    expect(userStats).to.not.be.null;
+    expect(newUserStats).to.be.null;
   });
 
   it("Owner adds scheduled games", async () => {
